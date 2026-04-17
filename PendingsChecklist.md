@@ -30,14 +30,21 @@
         It is the world's largest software registery, allowing to plug in community made components and softwares to extend app functionality.
 
 
-[ ]  best case of quick sort
-[ ]  monotonic stacks
+[x]  best case of quick sort
+    * occurs when the pivot element consistently divided the array into two nearly equal halves
+    *in the best case the depth of the recursion tree is minimized to log n. Since each level of the tree takes O(n) time to partition the elemes, the total wrok is  0(nlogn);
+        Big O complexity - O(nlogn).
+[x]  monotonic stacks
+    * specialized stack datastructure that maintains its elements in a specific order either entirely increasing or decreasing.
 
 **Full Domain 2**
 
 **Completed on: Sep 3, 2025 01:39 PM**
 
-[ ]  Callback hell
+[x]  Callback hell
+    * situation in JavaScript where multiple nested callback make the code almost impossible to read, maintain, and debug.
+    * happens when you perform several asynchronous operations  that depend on each other.
+    
 [ ]  answers need clarity in communication
 [ ]  Process.nextTick() vs setImmediate() —>  need clarity
 [ ]  observable
