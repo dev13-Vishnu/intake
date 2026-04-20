@@ -45,12 +45,39 @@
     * situation in JavaScript where multiple nested callback make the code almost impossible to read, maintain, and debug.
     * happens when you perform several asynchronous operations  that depend on each other.
     
-[ ]  answers need clarity in communication
 [ ]  Process.nextTick() vs setImmediate() —>  need clarity
 [ ]  observable
-[ ]  Example for Event driven architecture answer need clarity.
-[ ]  What is Mongo DB Need clarity
-[ ]  Replica set
+[x]  Example for Event driven architecture answer   need clarity.
+    in a standard procedural program the code starts at line 1 and end at line 100 and the precess exists in Node Js the Event loop keeps the program alive. Even if there is no code left to run, the event loop stays active if there are "listners"or"Timers" pending waiting  for specific signals to wake a function up.
+[x]  What is Mongo DB Need clarity
+    -Mongo Db is  a NoSQL, document oriented database.
+    designed  for high performance high availability and easy scalability.
+    - it uses JSON like Docuements called BSON stored data in Binary format.
+    - you don't have to define a rigid schema before adding data. 
+    - Embeded data: Instead of JOINS to link two tables we can  nest or embed realated data in one document.
+    - Horizontal Sharding: MongoDB build to be destributed . If your database gets too big for one server it can automatically split the data to multiple server
+[x]  Replica set
+    -group of mongodb process that maintain the same dataset 
+    - primary purpose is to provide redundancy and high availability.
+    - a standard replica set consists of at least three nodes. They operate in a primary - secondary  relationship.
+    - The Primary Node:
+        - All "write" operations(insert, update, delete) go to the primary.
+        -The primary, records all changes to its  data in a special file called the oplog(operations log)
+    - The Secondary Node:
+        -These nodes constantly replicate the primary's oplog apply the changes to their own data set.
+        - If primary has a hardware failure, these nodes contain a mirror image of the data.
+
+    -Election process:
+        -The nodes stay in constant communication using heartbeats. if secondary nodes stop receiving heart beats from primary for more than 10 seconds they realize the primary is down.
+        - The remaining secondary nodes hold and internal vote for a new primary.
+        - One secondary is promoted to primary and the and your application automatically switches its connection to the new leader.
+
+    -Arbitrer:
+        - sometimes for cost reasons a company might not want to pay for three full servers with three copies of the data. They might use two data nodes and arbiter.
+        - An arbitrer does not have a copy of data its only job is to stay in the set needs a strict majority of the original.
+        
+
+
 [ ]  CAP Theory need a bit more clarity
 [ ]  Find the product where price is lesser than 500 and greater than 300
 [ ]  The divide and conquer technique needs clarity. That is not only used in the binary search
