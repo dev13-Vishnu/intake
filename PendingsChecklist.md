@@ -75,10 +75,23 @@
     -Arbitrer:
         - sometimes for cost reasons a company might not want to pay for three full servers with three copies of the data. They might use two data nodes and arbiter.
         - An arbitrer does not have a copy of data its only job is to stay in the set needs a strict majority of the original.
-        
+
 
 
 [ ]  CAP Theory need a bit more clarity
+    - Author : Eric brewer
+    - fundamental principle in distrubuted systems.
+    - distributed data store can only provide two out of the following three guarantees.
+        -Consistency:
+            -every read receives the most recent write or an error.
+            meaning in a consistent system , once data is written to one node it is instantly updated to all other nodes.
+        - Availability
+            - Every request recives a (non - error)  response.
+            - no guarentee that it contains the most recent write.
+            - The system is always on - even if some nodes are failling, you can still get data
+        -Partition Tolerance
+            -system continues to operate dispite messages being dropped (delayed) by network between nodes.
+
 [ ]  Find the product where price is lesser than 500 and greater than 300
 [ ]  The divide and conquer technique needs clarity. That is not only used in the binary search
 [ ]  Graph implementation
@@ -88,12 +101,70 @@
 
 **Completed on: Aug 11, 2025 05:20 PM**
 
-[ ]  Callback Function need clarity
-[ ]  Arrow function want to understand more
-[ ]  Callback hell
-[ ]  async/await
+[x]  Callback Function need clarity
+- it is a function that is passed as an argument to a function.
+- and it is executed inside that function.
+
+[x]  Arrow function want to understand more
+-it is a consice way of writing a anonymous function
+- arrow function does not have their own this value. They inherit the this value from the surrounding code.
+[x]  Callback hell
+-It is a situation in javascritp where you have multiple asyncronous callback depend on each other. These nested callback make the code hard to read , maintain and debug
+[x]  async/await
+- it is syntatic sugar over Promise.
+- it lets you write aysncronous code that look like synchronous code.
+- while still being non blocking.
+- async keyword makes the function always return a promise.
+- await Pauses execution to the function.
+    -waits a promise to resolve
+    - return a reasolved value.
+    -How it works internally (IMPORTANT)
+
+    This is where most people stay shallow—you shouldn’t.
+
+    Code:
+    async function example() {
+        console.log("Start");
+
+    const data = await fetchData();
+
+    console.log("End");
+    }
+Step-by-step execution:
+1. Function starts
+"Start" logs
+fetchData() runs → returns a Promise
+2. await is encountered
+
+The engine:
+
+Registers a continuation:
+
+fetchData().then(resumeFunction)
+Pauses execution
+Removes function from call stack
+
+👉 The thread is now free
+
+3. Promise resolves
+Web API completes task (network/timer/etc.)
+The .then() callback is added to Microtask Queue
+4. Event loop resumes function
+When stack is empty → microtask runs
+
+Function continues from:
+
+console.log("End");
+
 [ ]  ESM vs CommonJS Practicals
-[ ]  query params vs path params need more clarity
+[x]  query params 
+- they appear after a question mark (?) in the URL
+- as key value pairs supperated by =
+-  
+[x] path params 
+- used to identify specific resource.
+- wirte them using ":" and it si
+
 [ ]  Middleware
 [ ]  List the product on the basics of Category
 [ ]  $expr $and $or $nor $not
