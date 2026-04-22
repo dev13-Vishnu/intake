@@ -156,7 +156,7 @@ Function continues from:
 
 console.log("End");
 
-[ ]  ESM vs CommonJS Practicals
+[x]  ESM vs CommonJS Practicals
 [x]  query params 
 - they appear after a question mark (?) in the URL
 - as key value pairs supperated by =
@@ -165,8 +165,30 @@ console.log("End");
 - used to identify specific resource.
 - wirte them using ":" and it si
 
-[ ]  Middleware
-[ ]  List the product on the basics of Category
+[x]  Middleware
+- function that has access to the request and response object and the next function in the applications request response cycle.
+-uses: 
+    -Authentication and authorization
+    before requrest ever touch private data
+    -Logging:
+    for debugging and analytics
+    -Body parsing:
+    example:
+    to convert Json object in a POST request the raw data is just a stream of bytes middlewares like express.json() converts that stream into readable javascript objects and attach it to request.body.
+    -Security:
+    setting special HTTP Headers to protect against hackers
+
+[x] Types of middlewares
+- Application-level
+- Router-level
+- Error-handling
+- Build-in
+- Third-partyx
+
+[x] http security headers :
+are HTTP response headers  sent by a server  to a browser  instructing to enable  security features that protect the web applications
+- mitigate threats like cross site scripting(XSS), click jacking and data injection by restricting browser behaviour  and restricting browser behaviour.
+[x]  List the product on the basics of Category
 [ ]  $expr $and $or $nor $not
 
 **Full Domain 2**
