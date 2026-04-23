@@ -195,27 +195,83 @@ are HTTP response headers  sent by a server  to a browser  instructing to enable
 
 **Completed on: Jul 14, 2025 12:26 PM**
 
-[ ]  first non repeating number
+[X]  first non repeating number
 [ ]  complexity of quick sort
 [ ]  complexity of binary Search
 [ ]  max stack implementation
 [ ]  merge sort
-[ ]  useParams
-[ ]  useLocation
-[ ]  how to get current url path
+[x]  useParams
+- used to access the path parameters
+- when to use when you need id or slug  of a specific resources.
+-how it works: if your route is defined as <Route path ="/product/:id"/> and the user  visits /products/99, useParams will capture that 99
+[x]  useLocation
+- returns an object that represents an entire current URL.
+-the object structure:  it returns object with these properties.
+    -pathname: The path (e.g., /shop);
+    -search: The query string  (e.g., ?category=electronics);
+    -hash: The anchor(e.g., #reviews)
+    -state: private data passed through a <Link> or maps()
+[x]  how to get current url path
+-using plain javascript web api:
+    -window.location.pathname: returns everything after domain name
+    -window.locaion.href: returns teh entire url
+    - usign react router: use "useLocation" hook
 [ ]  multi key index
 [ ]  .stats()
-[ ]  capped collection
-[ ]  query params and path params
+[x]  capped collection
+-specialized type of mongodb collection.
+-fixed in size.
+-follows First-In-First-Out insertion order.
+-like regular collection it does not grow dynamically as new data is added.
+-strict maximum size limit can be the size of memory used or number of documents.
+-when limit is reached mongodb automatically makes room for new documents by overwritting the older ones in the collection.
+     db.createCollection('log-data', {
+        capped: true,
+        size: 5242880, //size i bytes e.g: 5MB
+        max: 500 // optional maximum number or documents.
+     })
+
 [ ]  pass two numbers as query params and find the sum of the double of the numbers, and write it in a function.
 
 **Full Domain 2**
 
 **Completed on: Jun 12, 2025 11:13 PM**
 
-[ ]  localStorage vs sessionStorage
-[ ]  http in detail
-[ ]  process vs threads
+[x]  localStorage
+-designed for data that should persist even after the browser or tab is closed.
+-no exipration date, permenent until manually deleted by the user or the application.
+-Data is shared across all tabs and windows from the same orgin
+-storage limit around  5mb -10mb
+-storing: user preference(dark mode) persistent settings 
+[x] sessionStorage
+-data is removed as soon as the tab is closed. restricted to specific tab as the tab was created. same website different tab gets unique sessions storages.
+-usually similar to localstorage ~5MB.
+-for storing: form data, multistep wizard process, or sensitive data that shouldn't survive when tab is clossed.
+
+[x]  http in detail
+- foundational, application-layer protocol for the transfer of data
+- follows request- response model
+-Http is  stateless : server doesn't remember the client between the request. every request is treated as brand new interaction.
+- Anatomy of Http Request
+    1. Method: GET,POST,PUT,PATCH,DELETE
+    2.URL
+    3.Headers
+    4.Body(payload)
+-Anatomy Http Response
+    1.Status code
+    2.Headers
+    3.Body
+-http simply wraped in SSL/TLS encryption layer
+
+[x]  process vs threads
+-when you start an application the operating create process.
+-each process is independent it has it's own dedicated memory space.
+-one process crashing usually doesn't affect  others.
+-communication is difficult because processes don't share memory.
+-threads exist inside a process. Every process has atleast one thread.
+-threads share memory of their parent process. however each thread has its own stack and registers to keep track or its own calculation
+-if a thread has a major  error it can crash the entire process
+-communication is very easy since they share the same memmory then they can talk to each other  by simply writing and reading the same variables. 
 [ ]  clusters
 [ ]  $expr
 [ ]  render props
@@ -524,3 +580,165 @@ output = "name=hi&age=20"
 [ ]  BFS Complexity
 [ ]  graph indexing
 [ ]  represent a graph in memory
+
+
+
+
+🧠 MASTER PLAN: Processes & Threads in Node.js
+🔴 PHASE 1 — Core Mental Model (Non-negotiable foundation)
+✅ Checklist
+ Understand what a Process is (OS-level isolation, memory space)
+ Understand what a Thread is (shared memory, lightweight execution)
+ Difference between:
+ Single-threaded vs Multi-threaded
+ Concurrency vs Parallelism
+ CPU-bound vs I/O-bound tasks
+ Context switching (high-level understanding)
+🎯 Outcome
+
+You should be able to answer:
+
+“Why is Node.js called single-threaded but still handles concurrency?”
+
+🔴 PHASE 2 — Node.js Architecture Deep Dive
+✅ Checklist
+ Understand Event Loop (already started 👍)
+ Understand Call Stack
+ Understand Callback Queue / Task Queue
+ Understand Microtask Queue (Promises)
+ Understand libuv role
+🔥 Critical Topic
+ What actually runs in a thread in Node?
+
+👉 Key insight you must master:
+
+JS runs in main thread
+Node uses thread pool (libuv) for heavy tasks
+🎯 Outcome
+
+You should be able to explain:
+
+“If Node is single-threaded, where does parallelism happen?”
+
+🔴 PHASE 3 — libuv Thread Pool (Hidden Multithreading)
+✅ Checklist
+ What is libuv?
+ Default thread pool size (4)
+ Tasks handled by thread pool:
+ File system (fs)
+ DNS lookup
+ Crypto (bcrypt, pbkdf2)
+ How to increase thread pool size (UV_THREADPOOL_SIZE)
+ Thread pool saturation problem
+🧪 Practice
+ Create a script running multiple crypto.pbkdf2 tasks
+ Observe blocking vs non-blocking behavior
+🎯 Outcome
+
+You should understand:
+
+Thread pool ≠ Worker Threads
+
+🔴 PHASE 4 — Child Processes (True Parallelism)
+✅ Checklist
+ Why Node needs multiple processes
+ Understand:
+ spawn
+ exec
+ execFile
+ fork
+ IPC (Inter-process communication)
+ Message passing (process.send)
+🧪 Practice
+ Build a parent script spawning child processes
+ Send data between them
+🎯 Outcome
+
+You should answer:
+
+“When would you use child_process instead of worker_threads?”
+
+🔴 PHASE 5 — Worker Threads (True Multithreading in Node)
+✅ Checklist
+ Why worker threads were introduced
+ Difference:
+ Worker Threads vs Child Processes
+ Shared memory:
+ SharedArrayBuffer
+ Atomics
+ Message passing (postMessage)
+ Worker lifecycle
+🧪 Practice
+ Move CPU-heavy task to worker thread
+ Compare performance with main thread
+🎯 Outcome
+
+You should confidently explain:
+
+“How Node achieves multithreading”
+
+🔴 PHASE 6 — Cluster Module (Scaling Node Apps)
+✅ Checklist
+ What is clustering?
+ Why Node uses clustering
+ How cluster works (multiple processes sharing server port)
+ Load balancing basics
+ Sticky sessions problem
+🧪 Practice
+ Create clustered HTTP server
+ Log process IDs handling requests
+🎯 Outcome
+
+You should answer:
+
+“How do you scale a Node app on multi-core machines?”
+
+🔴 PHASE 7 — Advanced Concepts (Where most devs fail)
+✅ Checklist
+ Event loop blocking (real examples)
+ Identifying CPU bottlenecks
+ When to use:
+ Async I/O
+ Thread pool
+ Worker threads
+ Child processes
+ Backpressure handling
+ Race conditions in worker threads
+ Memory overhead comparison:
+ Process vs Thread
+🔴 PHASE 8 — Production Engineering Decisions
+✅ Checklist
+ Design decisions:
+ When to scale vertically vs horizontally
+ Monitoring:
+ CPU usage
+ Event loop lag
+ Tools:
+ clinic.js
+ node --inspect
+ Real-world cases:
+ Image processing
+ Video encoding
+ Large JSON parsing
+🧪 FINAL PROJECT (MANDATORY)
+
+Build a mini system:
+
+💡 “Task Processor System”
+Main server (Express)
+Offload CPU task:
+Version 1 → blocking
+Version 2 → worker thread
+Version 3 → child process
+Compare:
+Response time
+CPU usage
+🧠 INTERVIEW CHECKPOINTS
+
+You are NOT done until you can answer:
+
+Why Node is single-threaded but not limited
+Difference: event loop vs thread pool
+worker_threads vs child_process
+How clustering works internally
+How to handle CPU-heavy tasks
