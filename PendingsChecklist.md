@@ -586,58 +586,136 @@ output = "name=hi&age=20"
 
 🧠 MASTER PLAN: Processes & Threads in Node.js
 🔴 PHASE 1 — Core Mental Model (Non-negotiable foundation)
-✅ Checklist
- Understand what a Process is (OS-level isolation, memory space)
- Understand what a Thread is (shared memory, lightweight execution)
- Difference between:
- Single-threaded vs Multi-threaded
- Concurrency vs Parallelism
- CPU-bound vs I/O-bound tasks
- Context switching (high-level understanding)
-🎯 Outcome
+✅ Checklist You should be able to answer:
+1. Why can’t Node handle CPU-heavy tasks on main thread?
+    Node.js runs JavaScript on a single-threaded event loop. CPU-heavy tasks (e.g., large loops, hashing, image processing) are blocking operations.
+    - While such a task is executing, the call stack is occupied
+    - The event loop cannot process other callbacks
+    - This lead to event loop starvation -> no incoming requests are served.
+    Key point: Node is designed for non-blocking I/O , not long-running synchronous computation.
+    In production, CPU-heavy work must be offloaded to Worker Threads or external services.
+2. Why are threads faster but riskier than processes?
+    Threads:
+        - Share the same memory space
+        - Communication is fast (no IPC overhead)
+        - Lower memory footprint
+    Processes:
+        - Have isolated memory
+        - Communicate via IPC (inter-Process communication) -> slower
+        - More memory overhead
+    Why threads are riskier:
+        - Shared memory -> race conditions
+        - Required synchronization (locks, mutexes)
+        - Bugs like deadlocks and data corruption
+3. How does Node achieve concurrency with one thread?
+    -Node uses an event-driven, non-blocking architecture powered by libuv
+    Mechanism:
+    1. Async thread continues execution (non-blocking)
+        -OS kernal Or
+        -Libuv threadpool
+    2. Main thred continues execution (non-blocking)
+    3. When task completes: 
+        -callback is pushed to callbacke queue / microtask queue
+    4. Event loop picks it up when callstack is empty.
+    Result: Multiple operations are in progress simultaneously -> concurrency without multiple JS threads
+4. When do you need parallelism instead of concurrency?
+- when performance depeds on CPU utilization , concurrency alone is insufficient.
+- you need paralelism when taks must execute simultaneously
+on multiple CPU cores, typically for:
+    CPU-bound workloads:
+    -Image/video processing
+    -Cryptography
+    -Machine learning computations
+    -Large data transformations
+5. Why is I/O perfect for Node but CPU is not?
+    I/O operations:
+    - Network request, DB queries, file reads
+    - Mostly waiting time, not CPU time
+    - Node offloads them -> keeps event loop free.
+    CPU operations:
+    - Require continuous computation on the main thread 
+    - Cannot be offloaded automatically (except specific libuv thread pool tasks)
+    - Block the even loop
 
-You should be able to answer:
 
 “Why is Node.js called single-threaded but still handles concurrency?”
 
 🔴 PHASE 2 — Node.js Architecture Deep Dive
-✅ Checklist
- Understand Event Loop (already started 👍)
- Understand Call Stack
- Understand Callback Queue / Task Queue
- Understand Microtask Queue (Promises)
- Understand libuv role
-🔥 Critical Topic
- What actually runs in a thread in Node?
+✅ Checklist You should be able to explain:
 
-👉 Key insight you must master:
+1. Why do promises run before setTimeout?
+    -Promise callbacks go to the microtask queue.
+    -setTimeout callback goes to the timer queue
+    -After each turn of the event loop, Node drains microtask first, then process timers.
 
-JS runs in main thread
-Node uses thread pool (libuv) for heavy tasks
-🎯 Outcome
+2. Where does fs.readFile actually execute?
+    - the JS call is made in V8 , but the work is delegated to libuv's thread pool.
+    - A worker thread performs the blocking file I/O.
+    - On completion, a callback is queued back to the eventloop.
+3. Why does CPU-heavy code block everything?
+    - your JS runs on the singe main thread (eventloop).
+    - A long CPU taks occupies the callstack, preventing the loop from handling other events.
+4. What is the role of libuv vs V8?
+    -V8: Executes JavaScript 
+    - libuv: Provides the event loop, async I/O and abstraction, timers and a thread pool for certain blocking operations.
+    - V8 runse code; libuv orchestrate I/O and scheduling.
+5. Why doesn’t HTTP use thread pool?
+    - network is handled via non-blocking sockets
+    - Thread pool is for operations that lack non-blocing OS APIs
+6. Why doesn’t fs.readFile block Node?
+    - it is offloaded to libuv thread pool.
+    - the main thread return immediately and keeps serving other work.
+    - completion delivered via callback.
+7. Why does a for loop block Node but crypto.pbkdf2 doesn’t?
+    - for loop : pure JS -> runs on the main thread -> blocks.
+    - crypto.pdkdf2 : delegated to libuv thread pool -> runs on worker thread -> non blocking to the event loop.
+8. What actually runs inside libuv threads?
+    - Blocking or CPU-intensive native tasks such as:
+        - File system operations (fs.*)
+        - Crypto (pbkdf2, scrypt, some randomBytes)
+        - DNS (when not using OS async APIs)
+    - Implemented in C/C++ bindings, not your JS.
+9. When do you NEED worker threads instead of async/await?
+use wroker_thread when:
+    - Work is CPU- bound and long-running (image processing, compression, ML inference).
+    - You need Parellel JS execution or shared memory 
+    async/await only structures non-blocking I/O: it doesn't add parallel CPU
+10. Why HTTP requests don’t need threads
+-they are I/O-bound . Non-blocking sockets+ event loop let one thread manage thousands of connections concurrently.
+no per request thread needed.
+11. Why crypto.pbkdf2 runs in parallel but a loop doesn’t
+-for loop runs in single main thread -> no parallelism, and Pdkdf2 offloaded into thread pool -> can run on multiple cores
+12. Why Node can handle 10k requests concurrently but choke on CPU work
+    -10k requests ≈ mostly waiting (I/O) → event loop scales well.
+    -CPU-heavy work consumes the only JS thread, stalling progress for all requests.
 
-You should be able to explain:
-
-“If Node is single-threaded, where does parallelism happen?”
+13. When to choose:
+Async I/O (default)
+    - DB calls, HTTP calls, file reads/writes (typical web APIs)
+    - Goal: throughput with minimal threads
+libuv thread pool
+    - Built-in APIs that already use it (fs, crypto, dns)
+    - You generally don’t manage it, maybe tune UV_THREADPOOL_SIZE
+Worker Threads
+    - CPU-bound JS tasks you control
+    - Need parallelism within a process
+    - Care about lower IPC overhead vs processes
+Cluster (multiple processes)
+    - Scale across CPU cores for serving requests
+    - Each process has its own event loop (better isolation)
+Horizontal scaling (multiple machines)
+    - When a single box isn’t enough
+    - Combine with queues/workers for CPU jobs
+    - thread pool vs worker threads vs cluster
 
 🔴 PHASE 3 — libuv Thread Pool (Hidden Multithreading)
-✅ Checklist
- What is libuv?
- Default thread pool size (4)
- Tasks handled by thread pool:
- File system (fs)
- DNS lookup
- Crypto (bcrypt, pbkdf2)
- How to increase thread pool size (UV_THREADPOOL_SIZE)
- Thread pool saturation problem
-🧪 Practice
- Create a script running multiple crypto.pbkdf2 tasks
- Observe blocking vs non-blocking behavior
-🎯 Outcome
+✅ Checklist You should understand:
 
-You should understand:
-
-Thread pool ≠ Worker Threads
+1. Why does increasing UV_THREADPOOL_SIZE sometimes NOT improve performance?
+2. Why is bcrypt a common bottleneck in Node apps?
+3. Why doesn’t HTTP traffic use the thread pool?
+4. What happens when 100 crypto tasks hit a pool of 4 threads?
+5. When should you switch from thread pool → worker threads?
 
 🔴 PHASE 4 — Child Processes (True Parallelism)
 ✅ Checklist
