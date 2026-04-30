@@ -591,7 +591,7 @@ output = "name=hi&age=20"
     Node.js runs JavaScript on a single-threaded event loop. CPU-heavy tasks (e.g., large loops, hashing, image processing) are blocking operations.
     - While such a task is executing, the call stack is occupied
     - The event loop cannot process other callbacks
-    - This lead to event loop starvation -> no incoming requests are served.
+    - This lead to event loop starvation → no incoming requests are served.
     Key point: Node is designed for non-blocking I/O , not long-running synchronous computation.
     In production, CPU-heavy work must be offloaded to Worker Threads or external services.
 2. Why are threads faster but riskier than processes?
@@ -601,10 +601,10 @@ output = "name=hi&age=20"
         - Lower memory footprint
     Processes:
         - Have isolated memory
-        - Communicate via IPC (inter-Process communication) -> slower
+        - Communicate via IPC (inter-Process communication) → slower
         - More memory overhead
     Why threads are riskier:
-        - Shared memory -> race conditions
+        - Shared memory → race conditions
         - Required synchronization (locks, mutexes)
         - Bugs like deadlocks and data corruption
 3. How does Node achieve concurrency with one thread?
@@ -617,7 +617,7 @@ output = "name=hi&age=20"
     3. When task completes: 
         -callback is pushed to callbacke queue / microtask queue
     4. Event loop picks it up when callstack is empty.
-    Result: Multiple operations are in progress simultaneously -> concurrency without multiple JS threads
+    Result: Multiple operations are in progress simultaneously → concurrency without multiple JS threads
 4. When do you need parallelism instead of concurrency?
 - when performance depeds on CPU utilization , concurrency alone is insufficient.
 - you need paralelism when taks must execute simultaneously
@@ -631,7 +631,7 @@ on multiple CPU cores, typically for:
     I/O operations:
     - Network request, DB queries, file reads
     - Mostly waiting time, not CPU time
-    - Node offloads them -> keeps event loop free.
+    - Node offloads them → keeps event loop free.
     CPU operations:
     - Require continuous computation on the main thread 
     - Cannot be offloaded automatically (except specific libuv thread pool tasks)
@@ -667,8 +667,8 @@ on multiple CPU cores, typically for:
     - the main thread return immediately and keeps serving other work.
     - completion delivered via callback.
 7. Why does a for loop block Node but crypto.pbkdf2 doesn’t?
-    - for loop : pure JS -> runs on the main thread -> blocks.
-    - crypto.pdkdf2 : delegated to libuv thread pool -> runs on worker thread -> non blocking to the event loop.
+    - for loop : pure JS → runs on the main thread → blocks.
+    - crypto.pdkdf2 : delegated to libuv thread pool → runs on worker thread → non blocking to the event loop.
 8. What actually runs inside libuv threads?
     - Blocking or CPU-intensive native tasks such as:
         - File system operations (fs.*)
@@ -684,7 +684,7 @@ use wroker_thread when:
 -they are I/O-bound . Non-blocking sockets+ event loop let one thread manage thousands of connections concurrently.
 no per request thread needed.
 11. Why crypto.pbkdf2 runs in parallel but a loop doesn’t
--for loop runs in single main thread -> no parallelism, and Pdkdf2 offloaded into thread pool -> can run on multiple cores
+-for loop runs in single main thread → no parallelism, and Pdkdf2 offloaded into thread pool → can run on multiple cores
 12. Why Node can handle 10k requests concurrently but choke on CPU work
     -10k requests ≈ mostly waiting (I/O) → event loop scales well.
     -CPU-heavy work consumes the only JS thread, stalling progress for all requests.
@@ -712,30 +712,92 @@ Horizontal scaling (multiple machines)
 ✅ Checklist You should understand:
 
 1. Why does increasing UV_THREADPOOL_SIZE sometimes NOT improve performance?
+The pool (in libuv) is not a free parallelism knob.
+Limits you hit:
+    - CPU saturation: more threads than cores → context switching overhead > useful work.
+    - Work type mismatch: network I/O doesn’t use the pool; enlarging it won’t help HTTP.
+    - Contention: many pool threads competing for CPU, cache, or locks (e.g., crypto).
+    - Queueing still exists: if upstream (DB, disk) is the bottleneck, extra threads don’t reduce latency.
+Net: beyond a point, you get diminishing or negative returns.
 2. Why is bcrypt a common bottleneck in Node apps?
+    - it is intentionally CPU-intensive.
+    - in Node it runs via threadpool:
+        -Default pool is small (4) → easy to saturate.
+        -High concurrency (e.g., login spikes) → queue build up → latency spikes.
+    - if misused it (sync version or too high cost)  it can block or starve the system.
 3. Why doesn’t HTTP traffic use the thread pool?
+    -HTTP is network I/O , handled by non-blocking sockets
+    - LibUV registeres readiness events; no thread waits on socktes
+    - Threads are reserved for operations that lack non-blockign OS APIs
 4. What happens when 100 crypto tasks hit a pool of 4 threads?
+- 4 run concurrently, 96 queue up.
+- Effects: 
+    - Increased latency(queue wait + exectution time).
+    - Potential head-of-line blockign if task are uneven.
+    - Throughput capped by CPU +  4 workers.
+- Tuning options:
+    - Adjust UV_THREADPOOL_SIZE (carefully),
+    - Reduce per-task cost,
+    - Offload to worker threads or separate worker services.
 5. When should you switch from thread pool → worker threads?
+- Switch to worket_threads when:
+    - Work is CPU- bound and heavy/long-running(image/video processing, compresson,ML)
+    -  You need true parallelism for your JS logic (not just native ops).
+    - The livuv pool is saturated or causes taill latency.
+    - You need isolatio or dedicated capacity (avoid starvign FS/crypto used elsewhere).
+
 
 🔴 PHASE 4 — Child Processes (True Parallelism)
-✅ Checklist
- Why Node needs multiple processes
- Understand:
- spawn
- exec
- execFile
- fork
- IPC (Inter-process communication)
- Message passing (process.send)
-🧪 Practice
- Build a parent script spawning child processes
- Send data between them
-🎯 Outcome
+✅ Checklist You should answer:
 
-You should answer:
-
-“When would you use child_process instead of worker_threads?”
-
+1. Why is fork() preferred over spawn() for Node apps?
+- fork() is a specialized wrapper around spwn() for Node.
+- It: 
+    - Launches a new Node process
+    - Set up a build-in IPC channel (message passing via process.send)
+    -Share the same V8/Node runtie semantics 
+-spawn(): 
+    - Generic process launcher (any binary)
+    - No IPC by default
+    - More setup required for communication
+2. Why can’t processes share memory directly?
+    - Each process has its own virtual address space.
+    - Enforced by the OS for:
+        - Isolation
+        - Security
+        - Stability
+    if memory were shared:
+    - One process could corrupt another
+    - bugs would cascade system-wide
+    That's why communication is via:
+    - IPC
+    - Not raw memory access.
+3. When would exec become dangerous?
+    exec(): 
+        - Runs a command in a shell
+        - Bufferes the entire output in memory.
+4. Why is IPC required if processes run in parallel?
+    - Process run independently
+    - No shared memory → no direct data access
+    So to: 
+    - Send data 
+    - Coordinate work
+    - Return result
+5. When would you choose process over worker thread?
+    Choose Process when: 
+    -Isolation is critical
+        Crash in one process shouldn't affect others
+    - Scalling across CPU cores for serving requests
+        Use cluster or multiple instances.
+    - Different services/ microservices
+        independend deployment & scaling
+    - Security boundaries needed.
+    Choose worker threads when:
+    -CPU-heavy computation within same app
+        Faster communication
+    -Lower overhead thean processes
+        No full memmory duplication
+    - Need tight coupling with main app.
 🔴 PHASE 5 — Worker Threads (True Multithreading in Node)
 ✅ Checklist
  Why worker threads were introduced
